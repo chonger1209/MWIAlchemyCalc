@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         MWIIAlchemyCalc
+// @name         MWIAlchemyCalcNew
 
 // @namespace    http://tampermonkey.net/
-// @version      260819.01
+// @version      260819.02
 // @description  显示炼金收益和产出统计 milkywayidle 银河奶牛放置
 
 // @author       Chonger
@@ -12,6 +12,8 @@
 // @icon         https://www.milkywayidle.com/favicon.svg
 // @grant        none
 // @license      MIT
+// @downloadURL https://update.greasyfork.org/scripts/591965/MWIAlchemyCalcNew.user.js
+// @updateURL https://update.greasyfork.org/scripts/591965/MWIAlchemyCalcNew.meta.js
 // ==/UserScript==
 
 (function () {
