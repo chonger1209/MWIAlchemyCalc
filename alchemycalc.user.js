@@ -1,13 +1,14 @@
 // ==UserScript==
-// @name         MWIAlchemyCalc
+// @name         MWIIAlchemyCalc
 
 // @namespace    http://tampermonkey.net/
-// @version      20251106.1
+// @version      260819.01
 // @description  显示炼金收益和产出统计 milkywayidle 银河奶牛放置
 
-// @author       IOMisaka
+// @author       Chonger
 // @match        https://www.milkywayidle.com/*
 // @match        https://www.milkywayidlecn.com/*
+// @match        https://milkywayidlecn.com/*
 // @icon         https://www.milkywayidle.com/favicon.svg
 // @grant        none
 // @license      MIT
@@ -16,7 +17,7 @@
 (function () {
     'use strict';
     if (!window.mwi) {
-        console.error("MWIAlchemyCalc需要安装mooket才能使用");
+        console.error("MWIIAlchemyCalc需要安装mooket才能使用");
         return;
     }
 
@@ -313,7 +314,7 @@
         let rare = 0;
         let tea = 0;
         let catalyst = 0;
-        let tax = isIroncow ? 1 : 0.98;//铁牛不扣税
+        let tax = isIroncow ? 1 : 0.95;//铁牛不扣税
 
         const mode = {
             "ab": ["ask", "bid"],
@@ -332,8 +333,10 @@
             tea -= getPrice(item.itemHrid)[buyPrice] * item.count;//买入材料价格*数量
         }
 
+        // 点金直接产出金币，不扣市场税
+        let outputTax = isCoinify ? 1 : tax;
         for (let item of data.outputItems) {//产出物品每次不一定产出，需要计算成功率
-            output += getPrice(item.itemHrid)[sellPrice] * item.count * data.successRate * tax;//卖出产出价格*数量*成功率*税后
+            output += getPrice(item.itemHrid)[sellPrice] * item.count * data.successRate * outputTax;//卖出产出价格*数量*成功率*税后
 
         }
         if (data.inputItems[0].itemHrid !== "/items/task_crystal") {//任务水晶有问题，暂时不计算
@@ -358,7 +361,7 @@
         if (isIroncow && isCoinify) {//铁牛点金不计算输入
             profit = tea + output + essence + rare + catalyst;
             description = `
-(${mwi.isZh ? "税" : "tax"}${isIroncow ? "0" : "2%"})
+(${mwi.isZh ? "税" : "tax"}${isIroncow || isCoinify ? "0" : "5%"})
 (${mwi.isZh ? "效率" : "effeciency"}+${(data.effeciency * 100).toFixed(2)}%)
 ${mwi.isZh ? "每次收益" : "each"}:${profit}=
 \t${mwi.isZh ? "材料" : "material"}(${input})[${mwi.isZh ? "铁牛点金不计入" : "not included for ironcowinify"}]
@@ -371,7 +374,7 @@ ${mwi.isZh ? "每次收益" : "each"}:${profit}=
         } else {
             profit = input + tea + output + essence + rare + catalyst;
             description = `
-(${mwi.isZh ? "税" : "tax"}${isIroncow ? "0" : "2%"})
+(${mwi.isZh ? "税" : "tax"}${isIroncow || isCoinify ? "0" : "5%"})
 (${mwi.isZh ? "效率" : "effeciency"}+${(data.effeciency * 100).toFixed(2)}%)
 ${mwi.isZh ? "每次收益" : "each"}:${profit}=
 \t${mwi.isZh ? "材料" : "material"}(${input})
@@ -634,30 +637,32 @@ ${mwi.isZh ? "每次收益" : "each"}:${profit}=
         return total;
     }
     function calcPrice(items, buy) {
-        let total = 0;
-        const mode = {
-            "ab": ["ask", "bid"],
-            "ba": ["bid", "ask"],
-            "aa": ["ask", "ask"],
-            "bb": ["bid", "bid"],
-        };
-        let [buyPrice, sellPrice] = mode[priceMode];
-        let priceType = buy ? buyPrice : sellPrice;
+    let total = 0;
+    const mode = {
+        "ab": ["ask", "bid"],
+        "ba": ["bid", "ask"],
+        "aa": ["ask", "ask"],
+        "bb": ["bid", "bid"],
+    };
+    let [buyPrice, sellPrice] = mode[priceMode];
+    let priceType = buy ? buyPrice : sellPrice;
+    // 点金产出金币，不扣市场税
+    let sellTax = (alchemyActionIndex == 0) ? 1 : 0.95;
 
-        for (let item of items) {
+    for (let item of items) {
 
-            if (item.itemHrid === "/items/task_crystal") {//任务水晶有问题，暂时不计算
-            }
-            else if (getItemDataByHrid(item.itemHrid)?.categoryHrid === "/item_categories/loot") {//箱子必定是卖
-                total += calcChestPrice(item.itemHrid) * item.count * 0.98;//税
-            } else {
-
-                total += getPrice(item.itemHrid, item.enhancementLevel ?? 0)[priceType] * item.count * (buy ? 1 : 0.98);//买入材料价格*数量
-            }
-
+        if (item.itemHrid === "/items/task_crystal") {//任务水晶有问题，暂时不计算
         }
-        return total;
+        else if (getItemDataByHrid(item.itemHrid)?.categoryHrid === "/item_categories/loot") {//箱子必定是卖
+            total += calcChestPrice(item.itemHrid) * item.count * 0.95;//税
+        } else {
+
+            total += getPrice(item.itemHrid, item.enhancementLevel ?? 0)[priceType] * item.count * (buy ? 1 : sellTax);//买入材料价格*数量
+        }
+
     }
+    return total;
+}
     function itemHashToItem(itemHash) {
         let item = {};
         let arr = itemHash.split("::");
@@ -704,7 +709,7 @@ ${mwi.isZh ? "每次收益" : "each"}:${profit}=
             <div id="alchemoo_rare"></div>
             <div id="alchemoo_exp"></div>
             <div id="alchemoo_time"></div>
-            <div id="alchemoo_total" style="font-weight:bold;font-size:16px;border:1px solid var(--color-space-300);border-radius:4px;padding:1px 5px;display: flex; flex-direction: column; align-items: flex-start; gap: 4px;"></div>
+            <div id="alchemoo_total" style="font-size:14px;border:1px solid var(--color-space-300);border-radius:4px;padding:1px 5px;display: flex; flex-direction: column; align-items: flex-start; gap: 4px;"></div>
             `;
             outputContainer.style.flex = "0 0 auto";
             alchemyContainer.appendChild(outputContainer);
