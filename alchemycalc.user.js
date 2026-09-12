@@ -697,7 +697,7 @@ ${mwi.isZh ? "每次收益" : "each"}:${profit}=
             outputContainer.id = "alchemoo_result";
             outputContainer.style.fontSize = "13px";
             outputContainer.style.lineHeight = "16px";
-            outputContainer.style.maxWidth = "220px";
+            outputContainer.style.maxWidth = "180px";
             outputContainer.innerHTML = `
             <div id="alchemoo_title" style="font-weight: bold; margin-bottom: 10px; text-align: center; color: var(--color-space-300);">${mwi.isZh ? "炼金统计" : "Alchemy Result"}</div>
             <div>
